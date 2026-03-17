@@ -12,7 +12,7 @@ import { RefreshCw, Zap, Activity } from "lucide-react";
 export interface DashboardData {
   security: {
     score: number;
-    issues: Array<{ severity: "high" | "medium" | "low"; message: string } >;
+    issues: Array<{ severity: "high" | "medium" | "low"; message: string }>;
     lastScan: string;
   };
   system: {
@@ -46,14 +46,27 @@ export interface DashboardData {
 export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
+    setError(null);
+    
     try {
-      // Simulate API calls - in production these would be real OpenClaw CLI calls
-      const mockData: DashboardData = {
+      // Fetch real data from API routes
+      const [systemRes, agentsRes, memoryRes] = await Promise.all([
+        fetch('/api/system').catch(() => null),
+        fetch('/api/agents').catch(() => null),
+        fetch('/api/memory').catch(() => null),
+      ]);
+
+      const systemData = systemRes?.ok ? await systemRes.json() : { status: 'error', version: 'unknown', uptime: 'unknown', lastError: 'API unavailable' };
+      const agentsData = agentsRes?.ok ? await agentsRes.json() : { agents: [] };
+      const memoryData = memoryRes?.ok ? await memoryRes.json() : { indexedFiles: 0, indexStatus: 'error', searchPerformance: 0 };
+
+      const dashboardData: DashboardData = {
         security: {
           score: 87,
           issues: [
@@ -63,42 +76,17 @@ export default function Dashboard() {
           lastScan: new Date().toISOString(),
         },
         system: {
-          status: "running",
-          uptime: "3d 12h 45m",
-          version: "2.1.4",
-          lastError: null,
+          status: systemData.status || 'error',
+          uptime: systemData.uptime || 'unknown',
+          version: systemData.version || 'unknown',
+          lastError: systemData.lastError || null,
         },
-        agents: [
-          {
-            id: "1",
-            name: "Lyra",
-            status: "active",
-            currentTask: "Monitoring dashboard",
-            lastCheckIn: new Date().toISOString(),
-            role: "CEO",
-          },
-          {
-            id: "2",
-            name: "Cygnus",
-            status: "active",
-            currentTask: "Building Command Center",
-            lastCheckIn: new Date().toISOString(),
-            role: "Senior Vibe-Architect",
-          },
-          {
-            id: "3",
-            name: "Orion",
-            status: "idle",
-            currentTask: "Awaiting assignment",
-            lastCheckIn: new Date(Date.now() - 3600000).toISOString(),
-            role: "Lead Researcher",
-          },
-        ],
+        agents: agentsData.agents || [],
         memory: {
-          indexedFiles: 1247,
-          lastUpdate: new Date().toISOString(),
-          indexStatus: "ready",
-          searchPerformance: 0.045,
+          indexedFiles: memoryData.indexedFiles || 0,
+          lastUpdate: memoryData.lastUpdate || new Date().toISOString(),
+          indexStatus: memoryData.indexStatus || 'error',
+          searchPerformance: memoryData.searchPerformance || 0,
         },
         github: {
           repoCount: 12,
@@ -108,15 +96,10 @@ export default function Dashboard() {
         },
       };
 
-      // In production, these would be actual API calls:
-      // const agents = await fetch('/api/agents').then(r => r.json());
-      // const system = await fetch('/api/system').then(r => r.json());
-      // etc.
-
-      setData(mockData);
+      setData(dashboardData);
       setLastRefresh(new Date());
-    } catch (error) {
-      console.error("Failed to fetch dashboard data:", error);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch data');
     } finally {
       setLoading(false);
     }
@@ -183,6 +166,12 @@ export default function Dashboard() {
         {lastRefresh && (
           <p className="text-xs text-slate-500 mt-2">
             Last updated: {lastRefresh.toLocaleTimeString()}
+          </p>
+        )}
+        
+        {error && (
+          <p className="text-xs text-red-400 mt-2">
+            Error: {error}
           </p>
         )}
       </header>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Server, Clock, AlertCircle, CheckCircle, XCircle } from "lucide-react";
+import { Server, Clock, AlertCircle, CheckCircle, XCircle, Activity } from "lucide-react";
 
 interface SystemHealthPanelProps {
   data: {
@@ -8,6 +8,8 @@ interface SystemHealthPanelProps {
     uptime: string;
     version: string;
     lastError: string | null;
+    sessions?: number;
+    memoryFiles?: number;
   };
 }
 
@@ -56,7 +58,7 @@ export default function SystemHealthPanel({ data }: SystemHealthPanelProps) {
           <div className="p-3 bg-slate-800/50 rounded-lg">
             <div className="flex items-center gap-2 text-slate-400 mb-1">
               <Clock className="w-4 h-4" />
-              <span className="text-xs">Uptime</span>
+              <span className="text-xs">Status</span>
             </div>
             <p className="text-lg font-semibold text-slate-200">{data.uptime}</p>
           </div>
@@ -66,7 +68,25 @@ export default function SystemHealthPanel({ data }: SystemHealthPanelProps) {
               <Server className="w-4 h-4" />
               <span className="text-xs">Version</span>
             </div>
-            <p className="text-lg font-semibold text-slate-200">v{data.version}</p>
+            <p className="text-lg font-semibold text-slate-200">{data.version !== 'unknown' ? `v${data.version}` : 'unknown'}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="p-3 bg-slate-800/50 rounded-lg">
+            <div className="flex items-center gap-2 text-slate-400 mb-1">
+              <Activity className="w-4 h-4" />
+              <span className="text-xs">Sessions</span>
+            </div>
+            <p className="text-lg font-semibold text-cyan-400">{data.sessions ?? 0}</p>
+          </div>
+
+          <div className="p-3 bg-slate-800/50 rounded-lg">
+            <div className="flex items-center gap-2 text-slate-400 mb-1">
+              <Server className="w-4 h-4" />
+              <span className="text-xs">Memory Files</span>
+            </div>
+            <p className="text-lg font-semibold text-purple-400">{data.memoryFiles ?? 0}</p>
           </div>
         </div>
 
@@ -88,39 +108,6 @@ export default function SystemHealthPanel({ data }: SystemHealthPanelProps) {
             </div>
           </div>
         )}
-
-        <div className="p-3 bg-slate-800/30 rounded-lg">
-          <h3 className="text-xs font-medium text-slate-400 mb-2">Resource Usage</h3>
-          <div className="space-y-2">
-            <div>
-              <div className="flex justify-between text-xs mb-1">
-                <span className="text-slate-400">CPU</span>
-                <span className="text-slate-300">23%</span>
-              </div>
-              <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-500 rounded-full" style={{ width: "23%" }} />
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-xs mb-1">
-                <span className="text-slate-400">Memory</span>
-                <span className="text-slate-300">45%</span>
-              </div>
-              <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                <div className="h-full bg-purple-500 rounded-full" style={{ width: "45%" }} />
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-xs mb-1">
-                <span className="text-slate-400">Disk</span>
-                <span className="text-slate-300">62%</span>
-              </div>
-              <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                <div className="h-full bg-cyan-500 rounded-full" style={{ width: "62%" }} />
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

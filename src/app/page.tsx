@@ -20,6 +20,8 @@ export interface DashboardData {
     uptime: string;
     version: string;
     lastError: string | null;
+    sessions?: number;
+    memoryFiles?: number;
   };
   agents: Array<{
     id: string;
@@ -80,6 +82,8 @@ export default function Dashboard() {
           uptime: systemData.uptime || 'unknown',
           version: systemData.version || 'unknown',
           lastError: systemData.lastError || null,
+          sessions: systemData.sessions || 0,
+          memoryFiles: systemData.memoryFiles || 0,
         },
         agents: agentsData.agents || [],
         memory: {

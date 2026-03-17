@@ -1,6 +1,7 @@
 "use client";
 
-import { Users, Bot, Clock, ChevronRight } from "lucide-react";
+import { useState } from "react";
+import { Users, Bot, Clock, ChevronRight, Play, Square, RotateCw, Loader2 } from "lucide-react";
 
 interface Agent {
   id: string;
@@ -16,6 +17,9 @@ interface AgentStatusPanelProps {
 }
 
 export default function AgentStatusPanel({ agents }: AgentStatusPanelProps) {
+  const [loading, setLoading] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "active":
@@ -55,6 +59,33 @@ export default function AgentStatusPanel({ agents }: AgentStatusPanelProps) {
     return date.toLocaleDateString();
   };
 
+  const controlAgent = async (agentId: string, action: "start" | "stop" | "restart") => {
+    setLoading(`${agentId}-${action}`);
+    setMessage(null);
+
+    try {
+      const response = await fetch(`/api/agents/${agentId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage({ text: data.message, type: "success" });
+        // Refresh page after 1 second to show updated status
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        setMessage({ text: data.error || "Failed to control agent", type: "error" });
+      }
+    } catch (error) {
+      setMessage({ text: "Network error", type: "error" });
+    } finally {
+      setLoading(null);
+    }
+  };
+
   return (
     <div className="dashboard-card p-6">
       <div className="flex items-center justify-between mb-4">
@@ -69,6 +100,18 @@ export default function AgentStatusPanel({ agents }: AgentStatusPanelProps) {
           <span>{agents.filter((a) => a.status === "active").length} Active</span>
         </div>
       </div>
+
+      {message && (
+        <div
+          className={`mb-4 p-3 rounded-lg text-sm ${
+            message.type === "success"
+              ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
+              : "bg-red-500/10 border border-red-500/30 text-red-400"
+          }`}
+        >
+          {message.text}
+        </div>
+      )}
 
       <div className="space-y-3">
         {agents.map((agent) => (
@@ -102,6 +145,50 @@ export default function AgentStatusPanel({ agents }: AgentStatusPanelProps) {
                   </div>
                   <p className="text-xs text-slate-500">{agent.role}</p>
                 </div>
+              </div>
+
+              {/* Control Buttons */}
+              <div className="flex items-center gap-1">
+                {agent.status !== "active" && (
+                  <button
+                    onClick={() => controlAgent(agent.id, "start")}
+                    disabled={loading === `${agent.id}-start`}
+                    className="p-1.5 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 rounded-lg transition-colors disabled:opacity-50"
+                    title="Start agent"
+                  >
+                    {loading === `${agent.id}-start` ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Play className="w-4 h-4" />
+                    )}
+                  </button>
+                )}
+                {agent.status === "active" && (
+                  <button
+                    onClick={() => controlAgent(agent.id, "stop")}
+                    disabled={loading === `${agent.id}-stop`}
+                    className="p-1.5 bg-red-600/20 hover:bg-red-600/40 text-red-400 rounded-lg transition-colors disabled:opacity-50"
+                    title="Stop agent"
+                  >
+                    {loading === `${agent.id}-stop` ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Square className="w-4 h-4" />
+                    )}
+                  </button>
+                )}
+                <button
+                  onClick={() => controlAgent(agent.id, "restart")}
+                  disabled={loading === `${agent.id}-restart`}
+                  className="p-1.5 bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 rounded-lg transition-colors disabled:opacity-50"
+                  title="Restart agent"
+                >
+                  {loading === `${agent.id}-restart` ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RotateCw className="w-4 h-4" />
+                  )}
+                </button>
               </div>
             </div>
 

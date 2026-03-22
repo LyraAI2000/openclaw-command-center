@@ -7,6 +7,10 @@ import AgentStatusPanel from "./components/AgentStatusPanel";
 import MemoryStatsPanel from "./components/MemoryStatsPanel";
 import GitHubStatsPanel from "./components/GitHubStatsPanel";
 import WorkBoardPanel from "./components/WorkBoardPanel";
+import LogsPanel from "./components/LogsPanel";
+import CronJobsPanel from "./components/CronJobsPanel";
+import SessionsPanel from "./components/SessionsPanel";
+import QuickActionsPanel from "./components/QuickActionsPanel";
 import { RefreshCw, Zap, Activity } from "lucide-react";
 
 export interface DashboardData {
@@ -42,6 +46,8 @@ export interface DashboardData {
     recentCommits: number;
     openIssues: number;
     contributionData: number[];
+    recentRepos: Array<{ name: string; lang: string; stars: number }>;
+    username: string;
   };
 }
 
@@ -58,15 +64,17 @@ export default function Dashboard() {
     
     try {
       // Fetch real data from API routes
-      const [systemRes, agentsRes, memoryRes] = await Promise.all([
+      const [systemRes, agentsRes, memoryRes, githubRes] = await Promise.all([
         fetch('/api/system').catch(() => null),
         fetch('/api/agents').catch(() => null),
         fetch('/api/memory').catch(() => null),
+        fetch('/api/github').catch(() => null),
       ]);
 
       const systemData = systemRes?.ok ? await systemRes.json() : { status: 'error', version: 'unknown', uptime: 'unknown', lastError: 'API unavailable' };
       const agentsData = agentsRes?.ok ? await agentsRes.json() : { agents: [] };
       const memoryData = memoryRes?.ok ? await memoryRes.json() : { indexedFiles: 0, indexStatus: 'error', searchPerformance: 0 };
+      const githubData = githubRes?.ok ? await githubRes.json() : { repoCount: 0, recentCommits: 0, openIssues: 0, contributionData: [], recentRepos: [], username: 'LyraAI2000' };
 
       const dashboardData: DashboardData = {
         security: {
@@ -93,10 +101,12 @@ export default function Dashboard() {
           searchPerformance: memoryData.searchPerformance || 0,
         },
         github: {
-          repoCount: 12,
-          recentCommits: 47,
-          openIssues: 8,
-          contributionData: [3, 5, 2, 7, 4, 6, 8, 5, 3, 4, 6, 7, 5, 4, 6, 8, 7, 5, 4, 6, 7, 8, 6, 5, 4, 6, 7, 5, 8, 6],
+          repoCount: githubData.repoCount || 0,
+          recentCommits: githubData.recentCommits || 0,
+          openIssues: githubData.openIssues || 0,
+          contributionData: githubData.contributionData || Array(30).fill(0),
+          recentRepos: githubData.recentRepos || [],
+          username: githubData.username || 'LyraAI2000',
         },
       };
 
@@ -189,6 +199,10 @@ export default function Dashboard() {
           <MemoryStatsPanel data={data.memory} />
           <GitHubStatsPanel data={data.github} />
           <WorkBoardPanel />
+          <SessionsPanel refreshInterval={30000} />
+          <QuickActionsPanel />
+          <LogsPanel refreshInterval={5000} />
+          <CronJobsPanel refreshInterval={30000} />
         </div>
       )}
     </div>

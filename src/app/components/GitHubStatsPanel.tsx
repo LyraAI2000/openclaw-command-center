@@ -8,6 +8,8 @@ interface GitHubStatsPanelProps {
     recentCommits: number;
     openIssues: number;
     contributionData: number[];
+    recentRepos: Array<{ name: string; lang: string; stars: number }>;
+    username: string;
   };
 }
 
@@ -32,7 +34,7 @@ export default function GitHubStatsPanel({ data }: GitHubStatsPanelProps) {
           <h2 className="text-lg font-semibold text-slate-200">GitHub Stats</h2>
         </div>
         <a
-          href="https://github.com/LyraAI2000"
+          href={`https://github.com/${data.username}`}
           target="_blank"
           rel="noopener noreferrer"
           className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
@@ -88,24 +90,24 @@ export default function GitHubStatsPanel({ data }: GitHubStatsPanelProps) {
       <div className="mt-4 p-3 bg-slate-800/30 rounded-lg">
         <h3 className="text-xs font-medium text-slate-400 mb-2">Recent Repositories</h3>
         <div className="space-y-2">
-          {[
-            { name: "openclaw-command-center", lang: "TypeScript", stars: 0 },
-            { name: "workspace", lang: "Markdown", stars: 2 },
-            { name: "dotfiles", lang: "Shell", stars: 1 },
-          ].map((repo) => (
-            <div
-              key={repo.name}
-              className="flex items-center justify-between p-2 bg-slate-800/50 rounded hover:bg-slate-700/50 transition-colors cursor-pointer"
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-blue-400">{repo.name}</span>
-                <span className="text-xs text-slate-500">{repo.lang}</span>
+          {data.recentRepos.length > 0 ? (
+            data.recentRepos.map((repo) => (
+              <div
+                key={repo.name}
+                className="flex items-center justify-between p-2 bg-slate-800/50 rounded hover:bg-slate-700/50 transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-blue-400">{repo.name}</span>
+                  <span className="text-xs text-slate-500">{repo.lang}</span>
+                </div>
+                <div className="flex items-center gap-1 text-xs text-slate-400">
+                  <span>★ {repo.stars}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-1 text-xs text-slate-400">
-                <span>★ {repo.stars}</span>
-              </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="text-xs text-slate-500">No repositories found</p>
+          )}
         </div>
       </div>
     </div>
